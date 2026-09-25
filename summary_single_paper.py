@@ -5,7 +5,27 @@
 import os
 import ollama
 import fitz  # PyMuPDF
-from config import MODEL, CONTEXT_WINDOW, TEMPERATURE
+from pydantic import BaseModel, Field
+from config import MODEL, CONTEXT_WINDOW, TEMPERATURE, PROMPT_TEMPLATE
+
+
+# Schema passed to Ollama as `format=`, which constrains the model to output
+# JSON with exactly these fields. The Markdown is then built in Python, so the
+# headings are always correct regardless of how well the model follows the prompt.
+class Term(BaseModel):
+    term: str
+    definition: str
+
+class PaperSummary(BaseModel):
+    title: str
+    authors: list[str]
+    keywords: list[str] = Field(max_length=3)
+    core_contribution: str
+    methodology: str
+    key_findings: str
+    limitations: str
+    terms: list[Term]
+    references: list[str]
 
 def extract_academic_text(pdf_path):
     """
@@ -42,18 +62,7 @@ def summarize_academic_paper(paper_text):
     model_name = MODEL
     
     system_instruction = (
-        "You are an elite academic peer reviewer. Analyze the provided text from a research paper. "
-        "Produce a rigorous, publication-grade summary in clean Markdown (.md). "
-        "Structure your response exactly as follows:\n"
-        "# [Paper Title / Inferred Title]\n\n"
-        "## Authors (using -) \n\n"
-        "## Keywords (up to three, using -)\n\n"
-        "## 1. Core Contribution & Objective\n(What problem does this paper solve? What is the core hypothesis?)\n\n"
-        "## 2. Methodology & Framework\n(Describe the experiment design, dataset, or architectural setup.)\n\n"
-        "## 3. Key Findings & Data Insights\n(Synthesize main results, specifically highlighting any data, figures, or tables mentioned.)\n\n"
-        "## 4. Limitations & Future Work\n(What constraints or gaps did the authors mention?)\n\n"
-        "## 5. (optional) up to 3 definitions or key terms required to understand the content\n(Provide concise definitions for any technical terms or acronyms.)\n\n"
-        "## 6. (optional) up to 3 motivating references cited in the paper\n(Provide full citations for any references mentioned.)\n\n"
+       PROMPT_TEMPLATE
     )
     
     print(f"Sending prompt to local model ({model_name})...")
@@ -63,13 +72,33 @@ def summarize_academic_paper(paper_text):
             {'role': 'system', 'content': system_instruction},
             {'role': 'user', 'content': f"Here is the text extracted from the paper:\n\n{paper_text}"}
         ],
+        format=PaperSummary.model_json_schema(),  # Constrain output to the schema above
                 # FIX: Force Ollama to allocate enough VRAM/RAM for the paper length
         options={
             "num_ctx": CONTEXT_WINDOW,       # Sets the context window to 32k tokens
             "temperature": TEMPERATURE      # Lower temperature forces precise, analytical summaries
         }
     )
-    return response['message']['content']
+    summary = PaperSummary.model_validate_json(response['message']['content'])
+    return summary_to_markdown(summary)
+
+def summary_to_markdown(summary):
+    """ Renders a PaperSummary as the Markdown literature review note. """
+    terms = "\n".join(f"- **{t.term}**: {t.definition}" for t in summary.terms)
+    references = "\n".join(f"- {r}" for r in summary.references)
+
+    return (
+        f"# {summary.title}\n\n"
+        f"## Authors\n{', '.join(summary.authors)}\n\n"
+        f"## Keywords\n{', '.join(summary.keywords)}\n\n"
+        f"## 1. Core Contribution & Objective\n{summary.core_contribution}\n\n"
+        f"## 2. Methodology & Framework\n{summary.methodology}\n\n"
+        f"## 3. Key Findings & Data Insights\n{summary.key_findings}\n\n"
+        f"## 4. Limitations & Future Work\n{summary.limitations}\n\n"
+        f"## 5. Terms\n{terms}\n\n"
+        f"## 6. Reference summary\n{references}\n"
+    )
+
 
 def save_markdown_file(markdown_content, output_path):
     with open(output_path, "w", encoding="utf-8") as f:
@@ -98,6 +127,8 @@ if __name__ == "__main__":
         print(f"Extracted roughly {estimated_words} words.")
         
         markdown_review = summarize_academic_paper(extracted_text)
+
+
         save_markdown_file(markdown_review, output_summary)
         
     except Exception as e:
