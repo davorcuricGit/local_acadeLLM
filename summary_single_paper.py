@@ -3,6 +3,7 @@
 #and a local LLM model (e.g., qwen2.5:7b) to be running via Ollama
 
 import os
+import re
 import ollama
 import fitz  # PyMuPDF
 from pydantic import BaseModel, Field
@@ -25,7 +26,6 @@ class PaperSummary(BaseModel):
     key_findings: str
     limitations: str
     terms: list[Term]
-    references: list[str]
 
 def extract_academic_text(pdf_path):
     """
@@ -51,8 +51,37 @@ def extract_academic_text(pdf_path):
             # Simple heuristic filter to skip pure page numbers or tiny footer noise
             if len(text) > 5:
                 full_text.append(text)
-                
-    return "\n\n".join(full_text)
+
+    return "\n\n".join(remove_tables(remove_references(full_text)))
+
+def remove_references(blocks):
+    """
+    Drops everything from the last 'References' (or similar) heading onward,
+    to save context-window tokens. Returns the blocks unchanged if no heading is found.
+    """
+    heading = re.compile(r"(\d+\.?\s*)?(references|bibliography|works cited|literature cited)", re.IGNORECASE)
+
+    for i in range(len(blocks) - 1, -1, -1):
+        if heading.fullmatch(blocks[i]):
+            return blocks[:i]
+    return blocks
+
+def remove_tables(blocks):
+    """
+    Drops blocks that are mostly bare numbers (flattened table cells). They cost
+    many tokens and the model can't reconstruct the table layout from them anyway.
+    """
+    # A table cell like 0.36, -1.2, (2.07), 1,234, 12%, or %0.14 (PyMuPDF sometimes renders minus signs as %)
+    number = re.compile(r"[%\-–−]?\(?[\d.,]+\)?%?\**")
+
+    kept = []
+    for block in blocks:
+        lines = [line.strip() for line in block.split("\n") if line.strip()]
+        numeric = sum(1 for line in lines if number.fullmatch(line))
+        if len(lines) >= 4 and numeric / len(lines) > 0.5:
+            continue
+        kept.append(block)
+    return kept
 
 def summarize_academic_paper(paper_text):
     """ Sends academic text to a local LLM for a structured literature review summary. """
@@ -60,17 +89,20 @@ def summarize_academic_paper(paper_text):
     # Using qwen:7b or a similar 8B model is highly recommended over smaller 3B models
     # for handling scientific logic, tables, and dense data accurately.
     model_name = MODEL
-    
-    system_instruction = (
-       PROMPT_TEMPLATE
+
+    # Instructions go *after* the paper, in the same user message. Small models attend most
+    # to the text just before they answer. (A separate system message would be moved to the
+    # top of the prompt by Ollama's chat template, regardless of its position in the list.)
+    user_message = (
+        f"Here is the text extracted from the paper:\n\n{paper_text}\n\n"
+        f"---\n\n{PROMPT_TEMPLATE}"
     )
-    
+
     print(f"Sending prompt to local model ({model_name})...")
     response = ollama.chat(
         model=model_name,
         messages=[
-            {'role': 'system', 'content': system_instruction},
-            {'role': 'user', 'content': f"Here is the text extracted from the paper:\n\n{paper_text}"}
+            {'role': 'user', 'content': user_message}
         ],
         format=PaperSummary.model_json_schema(),  # Constrain output to the schema above
                 # FIX: Force Ollama to allocate enough VRAM/RAM for the paper length
@@ -79,13 +111,23 @@ def summarize_academic_paper(paper_text):
             "temperature": TEMPERATURE      # Lower temperature forces precise, analytical summaries
         }
     )
+
+    # Ollama silently drops the start of prompts longer than num_ctx (only its server log
+    # says so). A prompt that filled the whole window was truncated, so the summary can't be trusted.
+    prompt_tokens = response['prompt_eval_count']
+    print(f"Prompt used {prompt_tokens} of {CONTEXT_WINDOW} context tokens.")
+    if prompt_tokens >= CONTEXT_WINDOW:
+        raise ValueError(
+            f"Prompt was truncated to fit the {CONTEXT_WINDOW}-token context window; "
+            "the model did not see the whole paper. Shorten the input or raise CONTEXT_WINDOW."
+        )
+
     summary = PaperSummary.model_validate_json(response['message']['content'])
     return summary_to_markdown(summary)
 
 def summary_to_markdown(summary):
     """ Renders a PaperSummary as the Markdown literature review note. """
     terms = "\n".join(f"- **{t.term}**: {t.definition}" for t in summary.terms)
-    references = "\n".join(f"- {r}" for r in summary.references)
 
     return (
         f"# {summary.title}\n\n"
@@ -96,7 +138,6 @@ def summary_to_markdown(summary):
         f"## 3. Key Findings & Data Insights\n{summary.key_findings}\n\n"
         f"## 4. Limitations & Future Work\n{summary.limitations}\n\n"
         f"## 5. Terms\n{terms}\n\n"
-        f"## 6. Reference summary\n{references}\n"
     )
 
 
@@ -121,6 +162,8 @@ if __name__ == "__main__":
     try:
         print("Parsing academic PDF layout...")
         extracted_text = extract_academic_text(input_paper)
+
+     
         
         # Basic check to avoid pushing too many tokens to low-end systems
         estimated_words = len(extracted_text.split())

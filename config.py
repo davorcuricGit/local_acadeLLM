@@ -25,5 +25,4 @@ PROMPT_TEMPLATE = (
 "- key_findings: synthesize the main results, specifically highlighting any data, figures, or tables mentioned\n"
 "- limitations: what constraints, gaps, or future work did the authors mention?\n"
 "- terms: up to three technical terms or acronyms, each with a concise definition\n"
-"- references: up to three motivating references cited in the paper, as full citations\n"
 )
