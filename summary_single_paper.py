@@ -46,8 +46,8 @@ def summarize_academic_paper(paper_text):
         "Produce a rigorous, publication-grade summary in clean Markdown (.md). "
         "Structure your response exactly as follows:\n"
         "# [Paper Title / Inferred Title]\n\n"
-        "## Authors \n\n"
-        "## Keywords (up to three)\n\n"
+        "## Authors (using -) \n\n"
+        "## Keywords (up to three, using -)\n\n"
         "## 1. Core Contribution & Objective\n(What problem does this paper solve? What is the core hypothesis?)\n\n"
         "## 2. Methodology & Framework\n(Describe the experiment design, dataset, or architectural setup.)\n\n"
         "## 3. Key Findings & Data Insights\n(Synthesize main results, specifically highlighting any data, figures, or tables mentioned.)\n\n"
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 2:
-        print("Usage: python summary.py <path_to_academic_pdf>")
+        print("Usage: python summary_single_paper.py <path_to_academic_pdf>")
         sys.exit(1)
     input_paper = sys.argv[1]
 

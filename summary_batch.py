@@ -39,7 +39,7 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 2:
-        print("Usage: python summary.py <path_to_academic_pdf>")
+        print("Usage: python summary_batch.py <path_to_directory>")
         sys.exit(1)
     input_directory = sys.argv[1]
 

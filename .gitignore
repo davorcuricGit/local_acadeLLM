@@ -1,5 +1,5 @@
+__pycache__
 /.venv/
 .env
-requirements.txt
 .DS_Store
 todo.md

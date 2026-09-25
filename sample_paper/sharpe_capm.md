@@ -1,10 +1,12 @@
 # Capital Asset Prices: A Theory of Market Equilibrium under Conditions of Risk
 
 ## Authors
-William F. Sharpe
+- William F. Sharpe
 
 ## Keywords
-Capital Asset Pricing Model (CAPM), Market Equilibrium, Risk and Return
+- Capital Asset Pricing Model (CAPM)
+- Market Equilibrium
+- Risk and Return
 
 ## 1. Core Contribution & Objective
 The paper introduces the Capital Asset Pricing Model (CAPM), which provides a theoretical framework for understanding the relationship between risk and expected return in financial markets. The core hypothesis is that the expected return of an asset is linearly related to its systematic risk, measured by beta. This model aims to explain the pricing of risky assets and the equilibrium in a market where investors are rational and risk-averse.
