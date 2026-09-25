@@ -5,7 +5,7 @@
 import os
 import ollama
 import fitz  # PyMuPDF
-
+from config import MODEL, CONTEXT_WINDOW, TEMPERATURE
 
 def extract_academic_text(pdf_path):
     """
@@ -39,7 +39,7 @@ def summarize_academic_paper(paper_text):
     
     # Using qwen:7b or a similar 8B model is highly recommended over smaller 3B models
     # for handling scientific logic, tables, and dense data accurately.
-    model_name = 'qwen2.5:7b' 
+    model_name = MODEL
     
     system_instruction = (
         "You are an elite academic peer reviewer. Analyze the provided text from a research paper. "
@@ -65,8 +65,8 @@ def summarize_academic_paper(paper_text):
         ],
                 # FIX: Force Ollama to allocate enough VRAM/RAM for the paper length
         options={
-            "num_ctx": 32000,       # Sets the context window to 32k tokens
-            "temperature": 0.2      # Lower temperature forces precise, analytical summaries
+            "num_ctx": CONTEXT_WINDOW,       # Sets the context window to 32k tokens
+            "temperature": TEMPERATURE      # Lower temperature forces precise, analytical summaries
         }
     )
     return response['message']['content']
