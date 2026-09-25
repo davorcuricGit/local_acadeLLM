@@ -87,7 +87,7 @@ if __name__ == "__main__":
     input_paper = sys.argv[1]
 
     #output has same name and location as input PDF, but with .md extension
-    output_summary = input_paper.replace(".pdf", ".md")
+    output_summary = os.path.splitext(input_paper)[0] + ".md"
     
     try:
         print("Parsing academic PDF layout...")
