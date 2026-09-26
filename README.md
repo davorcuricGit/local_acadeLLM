@@ -5,7 +5,7 @@ Summarize academic papers (PDFs) into structured Markdown literature-review note
 ## What it does
 
 1. **Extracts text** from the PDF with PyMuPDF, reading page blocks in order so multi-column layouts stay readable, and drops tiny fragments such as page numbers.
-2. **Sends the text to a local model** (default `qwen2.5:7b`) with a peer-reviewer style prompt.
+2. **Sends the text to a local model** (default `qwen3.5:9b`) with a peer-reviewer style prompt.
 3. **Writes a Markdown summary** next to the PDF (`paper.pdf` → `paper.md`) with these sections:
    - Title, Authors, Keywords
    - 1. Core Contribution & Objective
@@ -21,7 +21,7 @@ See [sample_paper/](sample_paper/) for example PDFs and the summaries generated 
 
 - Python 3.9+
 - [Ollama](https://ollama.com/download), installed and running
-- Enough RAM/VRAM for the model and its context window. The default 32k-token context with a 7B model needs roughly 8–16 GB.
+- Enough RAM/VRAM for the model and its context window. The default 32k-token context with a 9B model needs roughly 8–16 GB.
 - Python packages: `ollama`, `pymupdf`, `python-dotenv`. Exact versions are pinned in [requirements-lock.txt](requirements-lock.txt).
 
 ## Installation
@@ -50,7 +50,7 @@ cp .env.example .env
 
 | Variable         | Default      | Description                                                                        |
 |------------------|--------------|------------------------------------------------------------------------------------|
-| `MODEL`          | `qwen2.5:7b` | Any model you have pulled with `ollama pull`                                       |
+| `MODEL`          | `qwen3.5:9b` | Any model you have pulled with `ollama pull`                                       |
 | `CONTEXT_WINDOW` | `32000`      | Context size in tokens. Lower it if you run out of memory; raise it for long papers |
 | `TEMPERATURE`    | `0.2`        | Lower values give more precise, less creative summaries                            |
 

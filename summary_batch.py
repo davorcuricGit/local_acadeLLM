@@ -43,6 +43,9 @@ if __name__ == "__main__":
         sys.exit(1)
     input_directory = sys.argv[1]
 
+    if not summary_single_paper.ensure_model_available():
+        sys.exit(1)
+
     try:
         print("Parsing academic PDF layout...")
         summarize_directory(input_directory)
