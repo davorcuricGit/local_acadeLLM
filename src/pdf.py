@@ -1,19 +1,14 @@
-import os
 import re
-import fitz  # PyMuPDF
+ 
 
 
-def extract_academic_text(pdf_path):
+def extract_academic_text(doc):
     """
     Extracts text from a multi-column academic PDF, 
     ensuring correct reading order and filtering out layout noise.
     """
-    if not os.path.exists(pdf_path):
-        raise FileNotFoundError(f"The file {pdf_path} does not exist.")
-        
-    doc = fitz.open(pdf_path)
-    full_text = []
     
+    full_text = []
     for page_num in range(len(doc)):
         page = doc[page_num]
         

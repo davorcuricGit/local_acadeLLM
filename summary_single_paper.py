@@ -3,18 +3,14 @@
 #and a local LLM model (e.g., qwen2.5:7b) to be running via Ollama
 
 import os
-import re
 import ollama
-import fitz  # PyMuPDF
 from pydantic import BaseModel, Field
-from config import MODEL, CONTEXT_WINDOW, TEMPERATURE, PROMPT_TEMPLATE
+from src.config import MODEL, CONTEXT_WINDOW, TEMPERATURE, PROMPT_TEMPLATE
 
 #import pdfhandling
-# Append the specific subdirectory path
-sys.path.append(os.path.abspath('./my_subdirectory'))
-
-import my_module
-
+from src.pdf import extract_academic_text
+from src.io_utils import load_pdf, save_markdown_file
+from src.model import ensure_model_available
 
 # Schema passed to Ollama as `format=`, which constrains the model to output
 # JSON with exactly these fields. The Markdown is then built in Python, so the
@@ -33,34 +29,7 @@ class PaperSummary(BaseModel):
     limitations: str
     terms: list[Term]
 
-def ensure_model_available(model_name=MODEL):
-    """
-    Checks that the model is downloaded in Ollama. If it isn't, asks the user whether
-    to download it from the Ollama library. Returns True if the model is ready to use.
-    """
-    try:
-        ollama.show(model_name)
-        return True
-    except ollama.ResponseError as e:
-        if e.status_code != 404:
-            raise
-
-    answer = input(f"Model '{model_name}' is not downloaded. Download it from the Ollama library now? [y/N] ")
-    if answer.strip().lower() not in ("y", "yes"):
-        print(f"Not downloading. Run `ollama pull {model_name}` or change MODEL in .env.")
-        return False
-
-    print(f"Downloading {model_name}...")
-    for progress in ollama.pull(model_name, stream=True):
-        if progress.total:
-            print(f"\r{progress.status}: {100 * (progress.completed or 0) / progress.total:.0f}%", end="", flush=True)
-        else:
-            print(f"\n{progress.status}", end="", flush=True)
-    print(f"\n{model_name} downloaded.")
-    return True
-
     
-
 def summarize_academic_paper(paper_text):
     """ Sends academic text to a local LLM for a structured literature review summary. """
     
@@ -119,11 +88,6 @@ def summary_to_markdown(summary):
     )
 
 
-def save_markdown_file(markdown_content, output_path):
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(markdown_content)
-    print(f"\nAcademic summary successfully saved to: {output_path}")
-
 if __name__ == "__main__":
     
     #get the input PDF from the user as input argument, otherwise return an error message
@@ -142,10 +106,10 @@ if __name__ == "__main__":
 
     try:
         print("Parsing academic PDF layout...")
-        extracted_text = extract_academic_text(input_paper)
+        input_doc = load_pdf(input_paper)
+        extracted_text = extract_academic_text(input_doc)
 
      
-        
         # Basic check to avoid pushing too many tokens to low-end systems
         estimated_words = len(extracted_text.split())
         print(f"Extracted roughly {estimated_words} words.")

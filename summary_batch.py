@@ -1,6 +1,9 @@
 import os
 import summary_single_paper
 
+from src.pdf import extract_academic_text
+from src.io_utils import save_markdown_file, load_pdf
+
 def summarize_directory(directory_path):
     """
     Summarizes all PDF files in the specified directory using the extract_academic_text and summarize_academic_paper functions.
@@ -22,11 +25,12 @@ def summarize_directory(directory_path):
                 continue
             
             try:
-                paper_text = summary_single_paper.extract_academic_text(pdf_path)
+                input_doc = load_pdf(pdf_path)
+                paper_text = extract_academic_text(input_doc)
                 summary = summary_single_paper.summarize_academic_paper(paper_text)
                 summaries[filename] = summary
 
-                summary_single_paper.save_markdown_file(summary, pdf_path[:-4] + ".md")
+                save_markdown_file(summary, pdf_path[:-4] + ".md")
             except Exception as e:
                 print(f"Error processing {filename}: {e}")
     
