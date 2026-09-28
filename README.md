@@ -1,28 +1,27 @@
-# local_acadeLLM
+# acadllm
 
 Summarize academic papers (PDFs) into structured Markdown literature-review notes using a **local** LLM via [Ollama](https://ollama.com). Nothing leaves your machine: no API keys, no cloud calls.
 
 ## What it does
 
-1. **Extracts text** from the PDF with PyMuPDF, reading page blocks in order so multi-column layouts stay readable, and drops tiny fragments such as page numbers.
-2. **Sends the text to a local model** (default `qwen3.5:9b`) with a peer-reviewer style prompt.
-3. **Writes a Markdown summary** next to the PDF (`paper.pdf` → `paper.md`) with these sections:
+1. **Extracts text** from each PDF with PyMuPDF, reading page blocks in order so multi-column layouts stay readable.
+2. **Trims the text to fit the model's context window**: drops the reference list, tables of bare numbers, and tiny fragments such as page numbers.
+3. **Sends the text to a local model** (default `qwen3.5:9b`). The model's output is constrained to a fixed JSON schema, so every summary has the same structure.
+4. **Writes a Markdown summary** next to the PDF (`paper.pdf` → `paper.md`) with these sections:
    - Title, Authors, Keywords
    - 1. Core Contribution & Objective
    - 2. Methodology & Framework
    - 3. Key Findings & Data Insights
    - 4. Limitations & Future Work
-   - 5. Key terms and definitions (optional)
-   - 6. Motivating references (optional)
+   - 5. Terms (key terms and definitions)
 
 See [sample_paper/](sample_paper/) for example PDFs and the summaries generated from them.
 
 ## Requirements
 
-- Python 3.9+
+- Python 3.10+
 - [Ollama](https://ollama.com/download), installed and running
 - Enough RAM/VRAM for the model and its context window. The default 32k-token context with a 9B model needs roughly 8–16 GB.
-- Python packages: `ollama`, `pymupdf`, `python-dotenv`. Exact versions are pinned in [requirements-lock.txt](requirements-lock.txt).
 
 ## Installation
 
@@ -32,80 +31,85 @@ cd local_acadeLLM
 
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements-lock.txt
-
-# Download the model (once)
-ollama pull qwen2.5:7b
+pip install -e .
 ```
 
-Make sure the Ollama server is running: open the Ollama app, or run `ollama serve`.
+This installs the dependencies listed in [pyproject.toml](pyproject.toml) and creates the `acadllm` command. To use the exact versions this project was tested with, run `pip install -r requirements-lock.txt` before `pip install -e .`.
 
-## Configuration
-
-Settings are read from a `.env` file in the project root (see [config.py](config.py)). Copy the example to get started:
-
-```bash
-cp .env.example .env
-```
-
-| Variable         | Default      | Description                                                                        |
-|------------------|--------------|------------------------------------------------------------------------------------|
-| `MODEL`          | `qwen3.5:9b` | Any model you have pulled with `ollama pull`                                       |
-| `CONTEXT_WINDOW` | `32000`      | Context size in tokens. Lower it if you run out of memory; raise it for long papers |
-| `TEMPERATURE`    | `0.2`        | Lower values give more precise, less creative summaries                            |
-
-If there is no `.env`, the defaults above are used.
+Make sure the Ollama server is running: open the Ollama app, or run `ollama serve`. If the model isn't downloaded yet, `acadllm` offers to download it on first run (or run `ollama pull qwen3.5:9b` yourself).
 
 ## Usage
 
-**Summarize a single paper:**
-
 ```bash
-python summary_single_paper.py path/to/paper.pdf
-# -> path/to/paper.md
+acadllm path/to/paper.pdf        # one paper -> path/to/paper.md
+acadllm path/to/papers/          # every PDF in the directory
+acadllm --help                   # all options
 ```
 
-**Summarize every PDF in a directory:**
+| Option | Description |
+|---|---|
+| `--model NAME` | Ollama model to use for this run, e.g. `--model qwen2.5:7b` |
+| `--overwrite` | Re-summarize PDFs that already have a `.md` summary |
 
-```bash
-python summary_batch.py path/to/papers/
-```
-
-The batch script saves each summary as soon as it's done. It skips PDFs that already have a matching `.md`, so you can stop and rerun it without redoing finished papers. To regenerate a summary, delete its `.md` file.
+PDFs that already have a summary are skipped, so you can stop a directory run and restart it without redoing finished papers. If some papers fail, the others are still processed, and the failures are listed at the end.
 
 **Use it from your own Python code:**
 
 ```python
-import summary_single_paper as s
+from acadllm.pdf import load_pdf, extract_academic_text
+from acadllm.model import summarize_academic_paper
+from acadllm.output import save_markdown_file
 
-text = s.extract_academic_text("paper.pdf")
-summary = s.summarize_academic_paper(text)
-s.save_markdown_file(summary, "paper.md")
+text = extract_academic_text(load_pdf("paper.pdf"))
+save_markdown_file(summarize_academic_paper(text), "paper.md")
 ```
+
+## Configuration
+
+`acadllm` works without any configuration. To change a default for every run, set an environment variable, for example in your shell or in `~/.zshrc`:
+
+```bash
+export ACADLLM_MODEL=qwen2.5:7b
+```
+
+| Variable | Default | Description |
+|---|---|---|
+| `ACADLLM_MODEL` | `qwen3.5:9b` | Any Ollama model. `--model` overrides it for a single run |
+| `ACADLLM_CONTEXT_WINDOW` | `32768` | Context size in tokens. Raise it for long papers if your model and memory allow it; lower it if you run out of memory |
+| `ACADLLM_TEMPERATURE` | `0.2` | Lower values give more precise, less creative summaries |
 
 ## Performance notes
 
-- The model is held in memory by the Ollama server, not by these scripts. It loads once on the first request and stays loaded between papers, then unloads after about 5 idle minutes by default.
+- The model is held in memory by the Ollama server, not by `acadllm`. It loads on the first paper and stays loaded between papers, then unloads after about 5 idle minutes by default.
 - Most of the time is spent generating each summary. Expect anywhere from under a minute to several minutes per paper, depending on your hardware and the paper's length.
-- Papers longer than `CONTEXT_WINDOW` tokens are silently truncated by the model. Raise the value (if memory allows) for very long papers.
-   - future versions will include automatic chunking for particularly long papers
+- If a paper is too long for the context window, Ollama would silently drop the beginning of it. `acadllm` detects this and reports an error for that paper instead of saving an unreliable summary. Raise `ACADLLM_CONTEXT_WINDOW` (`qwen3.5:9b` supports up to 256k tokens, memory permitting).
 
 ## Limitations
 
-- Scanned PDFs without a text layer return little or no text; OCR them first.
-- Tables, equations, and figures are extracted as raw text only, so summaries of them may be imprecise.
-- LLM summaries can contain errors or invented details, especially in citations. Check important claims against the paper.
+- **Scanned PDFs** without a text layer produce little or no text, and the model may then write a summary from memory rather than from the paper. OCR them first, e.g. `brew install ocrmypdf` and `ocrmypdf scanned.pdf scanned_ocr.pdf`.
+- Tables are removed and equations and figures are extracted as raw text only, so details from them may be missing or imprecise.
+- LLM summaries can contain errors or invented details. Check important claims against the paper.
+
+## Roadmap
+
+- **Cluster**: link and group summaries into themes, using Obsidian-style notes and a graph.
+- **Organize**: move PDFs into themed subdirectories based on the clusters.
+- Automatic OCR for scanned PDFs.
+- Chunked summarization for papers too long for the context window.
 
 ## Project structure
 
 ```
-├── summary_single_paper.py   # PDF extraction, LLM call, save to Markdown (CLI for one file)
-├── summary_batch.py          # Summarize all PDFs in a directory
-├── config.py                 # Loads settings from .env
-├── .env.example              # Example configuration
-├── requirements-lock.txt     # Pinned dependencies
-├── LICENSE                   # MIT license
-└── sample_paper/             # Example PDFs and generated summaries
+├── pyproject.toml            # Project metadata, dependencies, `acadllm` command
+├── requirements-lock.txt     # Exact tested dependency versions
+├── src/acadllm/
+│   ├── cli.py                # `acadllm` command-line interface
+│   ├── config.py             # Default settings and the prompt
+│   ├── pdf.py                # PDF loading and text extraction/cleanup
+│   ├── model.py              # Ollama model check and summarization
+│   └── output.py             # Markdown rendering and saving
+├── sample_paper/             # Example PDFs and generated summaries
+└── LICENSE                   # MIT license
 ```
 
 ## License
