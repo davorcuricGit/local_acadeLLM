@@ -6,3 +6,6 @@ todo.md
 
 #ignore ocr cache
 .ocr/
+
+#
+*.egg-info/
