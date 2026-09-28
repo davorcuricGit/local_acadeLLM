@@ -1,0 +1,33 @@
+# How to build and install this project. setuptools is the standard, widely supported builder.
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+# project information
+[project]
+name = "acadllm"
+version = "0.1.0"
+description = "Summarize academic PDFs into structured Markdown notes using a local LLM via Ollama."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Davor C." }]
+
+# Packages the code imports directly.
+dependencies = [
+    "ollama>=0.6",
+    "pydantic>=2",
+    "pymupdf>=1.24.3", 
+]
+
+[project.urls]
+Repository = "https://github.com/davorcuricGit/local_acadeLLM"
+
+# Terminal commands created on install: `acadllm` runs main() in src/acadllm/cli.py.
+[project.scripts]
+acadllm = "acadllm.cli:main"
+
+# Tells setuptools the package lives in src/ (the "src layout").
+[tool.setuptools.packages.find]
+where = ["src"]

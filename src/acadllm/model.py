@@ -1,6 +1,8 @@
 import ollama
 from pydantic import BaseModel, Field
-from acadllm.config import MODEL
+from acadllm.config import MODEL, PROMPT_TEMPLATE, CONTEXT_WINDOW, TEMPERATURE
+from acadllm.output import summary_to_markdown
+
 
 def ensure_model_available(model_name=MODEL):
     """
@@ -16,7 +18,7 @@ def ensure_model_available(model_name=MODEL):
 
     answer = input(f"Model '{model_name}' is not downloaded. Download it from the Ollama library now? [y/N] ")
     if answer.strip().lower() not in ("y", "yes"):
-        print(f"Not downloading. Run `ollama pull {model_name}` or change MODEL in .env.")
+        print(f"Not downloading. Run `ollama pull {model_name}` or choose another model with --model.")
         return False
 
     print(f"Downloading {model_name}...")
@@ -48,12 +50,12 @@ class PaperSummary(BaseModel):
 
 
     
-def summarize_academic_paper(paper_text):
+def summarize_academic_paper(paper_text, model_name = MODEL):
     """ Sends academic text to a local LLM for a structured literature review summary. """
     
-    # Using qwen:7b or a similar 8B model is highly recommended over smaller 3B models
+    # Using qwen:9b or a similar is highly recommended over smaller 3B models
     # for handling scientific logic, tables, and dense data accurately.
-    model_name = MODEL
+    
 
     # Instructions go *after* the paper, in the same user message. Small models attend most
     # to the text just before they answer. (A separate system message would be moved to the
