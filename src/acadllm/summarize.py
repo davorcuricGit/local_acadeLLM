@@ -1,7 +1,9 @@
 import ollama
 from pydantic import BaseModel, Field
-from acadllm.config import MODEL, PROMPT_TEMPLATE, CONTEXT_WINDOW, TEMPERATURE
+
 from acadllm.pdf import extract_academic_text, load_pdf
+from acadllm.config import MODEL, PROMPT_TEMPLATE, CONTEXT_WINDOW, TEMPERATURE
+
 
 
 def summary_to_markdown(summary):
@@ -26,34 +28,6 @@ def save_markdown_file(markdown_content, output_path):
     print(f"\nAcademic summary successfully saved to: {output_path}")
 
 
-
-def ensure_model_available(model_name=MODEL):
-    """
-    Checks that the model is downloaded in Ollama. If it isn't, asks the user whether
-    to download it from the Ollama library. Returns True if the model is ready to use.
-    """
-    try:
-        ollama.show(model_name)
-        return True
-    except ollama.ResponseError as e:
-        if e.status_code != 404:
-            raise
-
-    answer = input(f"Model '{model_name}' is not downloaded. Download it from the Ollama library now? [y/N] ")
-    if answer.strip().lower() not in ("y", "yes"):
-        print(f"Not downloading. Run `ollama pull {model_name}` or choose another model with --model.")
-        return False
-
-    print(f"Downloading {model_name}...")
-    for progress in ollama.pull(model_name, stream=True):
-        if progress.total:
-            print(f"\r{progress.status}: {100 * (progress.completed or 0) / progress.total:.0f}%", end="", flush=True)
-        else:
-            print(f"\n{progress.status}", end="", flush=True)
-    print(f"\n{model_name} downloaded.")
-    return True
-
-
 # Schema passed to Ollama as `format=`
 # constrains the model to output JSON with exactly these fields. 
 class Term(BaseModel):
@@ -69,8 +43,6 @@ class PaperSummary(BaseModel):
     key_findings: str
     limitations: str
     terms: list[Term]
-
-
 
     
 def summarize_academic_paper(paper_text, model_name = MODEL):
@@ -113,32 +85,23 @@ def summarize_academic_paper(paper_text, model_name = MODEL):
         )
 
     summary = PaperSummary.model_validate_json(response['message']['content'])
-    return summary_to_markdown(summary)
+    return summary
 
 
 
-
-def run_summarize(args):
-    if args.path.is_dir():
-            pdfs = sorted(p for p in args.path.iterdir() if p.suffix.lower() == ".pdf")
-    elif args.path.is_file():
-        pdfs = [args.path]
+def summarize_path(path, overwrite=False, model_name=MODEL):
+    """ Summarizes a PDF, or every PDF in a directory. Returns the names of PDFs that failed. Called by cli.py"""
+    if path.is_dir():
+        pdfs = sorted(p for p in path.iterdir() if p.suffix.lower() == ".pdf")
     else:
-        parser.error(f"{args.path} does not exist")
-
-    # Checked once up front, so a batch run doesn't ask per paper
-    if not ensure_model_available(args.model):
-        sys.exit(1)
+        pdfs = [path]
 
     failed = []
     for i, pdf_path in enumerate(pdfs, start=1):
         print(f"\n[{i}/{len(pdfs)}] {pdf_path.name}")
-        if not summarize_pdf(pdf_path, args.overwrite, args.model):
+        if not summarize_pdf(pdf_path, overwrite, model_name):
             failed.append(pdf_path.name)
-
-    if failed:
-        print(f"\n{len(failed)} of {len(pdfs)} failed: {', '.join(failed)}")
-        sys.exit(1)
+    return failed
 
 
 
@@ -152,9 +115,9 @@ def summarize_pdf(pdf_path, overwrite=False, model_name=MODEL):
     try:
         paper_text = extract_academic_text(load_pdf(pdf_path))
         print(f"Extracted roughly {len(paper_text.split())} words.")
-        save_markdown_file(summarize_academic_paper(paper_text, model_name), output_path)
+        save_markdown_file(summary_to_markdown(summarize_academic_paper(paper_text, model_name)), output_path)
         return True
     except Exception as e:
-        print(f"Error processing {pdf_path.name}: {e}")
+        print(f"Error processing {pdf_path.name}: {type(e).__name__}: {e}")
         return False
 

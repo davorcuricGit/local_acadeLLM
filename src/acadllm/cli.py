@@ -1,9 +1,30 @@
-import argparse
 import sys
+import argparse
 from pathlib import Path
 
 from acadllm.config import MODEL
-from acadllm.summarize import run_summarize
+from acadllm.summarize import summarize_path
+from acadllm.llm import ensure_model_available
+
+
+def existing_path(value):
+    """ argparse type: a Path that must exist. """
+    path = Path(value)
+    if not path.exists():
+        raise argparse.ArgumentTypeError(f"{value} does not exist")
+    return path
+
+def run_summarize(args):
+
+    # Checked once up front, so a batch run doesn't ask per paper
+    if not ensure_model_available(args.model):
+        sys.exit(1)
+
+    failed = summarize_path(args.path, args.overwrite, args.model)
+    if failed:
+        print(f"\n{len(failed)} failed: {', '.join(failed)}")
+        sys.exit(1)
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -16,7 +37,7 @@ def main():
     summarize = subcommands.add_parser("summarize", help="produce markdown summary of each PDF")
     
 
-    summarize.add_argument("path", type=Path, help="a PDF file, or a directory of PDFs")
+    summarize.add_argument("path", type=existing_path, help="a PDF file, or a directory of PDFs")
     summarize.add_argument("--overwrite", action="store_true",
                         help="re-summarize PDFs that already have a .md summary")
     summarize.add_argument("--model", default=MODEL, help=f"Ollama model to use, (default: {MODEL})")
