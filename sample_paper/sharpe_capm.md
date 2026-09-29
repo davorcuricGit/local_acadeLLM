@@ -7,19 +7,19 @@ William F. Sharpe
 Capital Asset Pricing Model, Market Equilibrium, Systematic Risk
 
 ## 1. Core Contribution & Objective
-Derives the theoretical relationship between expected asset returns and systematic risk within a market equilibrium framework, establishing that only non-diversifiable risk is priced.
+Establishes the theoretical relationship between expected asset returns and systematic risk (beta) in a market equilibrium, deriving the Capital Asset Pricing Model (CAPM).
 
 ## 2. Methodology & Framework
-Theoretical derivation utilizing mean-variance analysis and optimization under uncertainty; no empirical dataset used in the primary model formulation.
+Theoretical derivation based on mean-variance analysis and portfolio optimization under assumptions of homogeneous expectations and frictionless markets.
 
 ## 3. Key Findings & Data Insights
-Establishes the Security Market Line (SML) equation linking expected excess returns to beta; demonstrates that the market portfolio is efficient and all investors hold combinations of risk-free assets and the market portfolio.
+Demonstrates that the market portfolio is mean-variance efficient; proves expected returns are linearly related to beta; derives the Security Market Line equation.
 
 ## 4. Limitations & Future Work
-Assumes homogeneous investor expectations, frictionless markets, normally distributed returns, and rational behavior, which are restrictive assumptions often challenged in empirical finance.
+Assumes no taxes, transaction costs, or asymmetric information; relies on homogeneous investor expectations which may not hold in practice.
 
 ## 5. Terms
-- **CAPM**: Capital Asset Pricing Model, a model describing the relationship between systematic risk and expected return for assets.
-- **Beta**: A coefficient measuring an asset's sensitivity to market movements and its contribution to portfolio volatility.
-- **Mean-Variance Analysis**: A framework for constructing portfolios that maximizes expected return for a given level of risk or minimizes risk for a given return.
+- **CAPM**: Capital Asset Pricing Model: A model describing the relationship between systematic risk and expected return for assets.
+- **Beta**: A measure of an asset's volatility relative to the overall market portfolio.
+- **Mean-Variance Efficiency**: The property of a portfolio where no other portfolio offers a higher expected return for the same level of risk.
 

@@ -1,7 +1,30 @@
 import ollama
 from pydantic import BaseModel, Field
 from acadllm.config import MODEL, PROMPT_TEMPLATE, CONTEXT_WINDOW, TEMPERATURE
-from acadllm.output import summary_to_markdown
+from acadllm.pdf import extract_academic_text, load_pdf
+
+
+def summary_to_markdown(summary):
+    """ Renders a PaperSummary as the Markdown literature review note. """
+    terms = "\n".join(f"- **{t.term}**: {t.definition}" for t in summary.terms)
+
+    return (
+        f"# {summary.title}\n\n"
+        f"## Authors\n{', '.join(summary.authors)}\n\n"
+        f"## Keywords\n{', '.join(summary.keywords)}\n\n"
+        f"## 1. Core Contribution & Objective\n{summary.core_contribution}\n\n"
+        f"## 2. Methodology & Framework\n{summary.methodology}\n\n"
+        f"## 3. Key Findings & Data Insights\n{summary.key_findings}\n\n"
+        f"## 4. Limitations & Future Work\n{summary.limitations}\n\n"
+        f"## 5. Terms\n{terms}\n\n"
+    )
+
+
+def save_markdown_file(markdown_content, output_path):
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(markdown_content)
+    print(f"\nAcademic summary successfully saved to: {output_path}")
+
 
 
 def ensure_model_available(model_name=MODEL):
@@ -91,3 +114,47 @@ def summarize_academic_paper(paper_text, model_name = MODEL):
 
     summary = PaperSummary.model_validate_json(response['message']['content'])
     return summary_to_markdown(summary)
+
+
+
+
+def run_summarize(args):
+    if args.path.is_dir():
+            pdfs = sorted(p for p in args.path.iterdir() if p.suffix.lower() == ".pdf")
+    elif args.path.is_file():
+        pdfs = [args.path]
+    else:
+        parser.error(f"{args.path} does not exist")
+
+    # Checked once up front, so a batch run doesn't ask per paper
+    if not ensure_model_available(args.model):
+        sys.exit(1)
+
+    failed = []
+    for i, pdf_path in enumerate(pdfs, start=1):
+        print(f"\n[{i}/{len(pdfs)}] {pdf_path.name}")
+        if not summarize_pdf(pdf_path, args.overwrite, args.model):
+            failed.append(pdf_path.name)
+
+    if failed:
+        print(f"\n{len(failed)} of {len(pdfs)} failed: {', '.join(failed)}")
+        sys.exit(1)
+
+
+
+def summarize_pdf(pdf_path, overwrite=False, model_name=MODEL):
+    """ Summarizes one PDF into a .md file next to it. Returns False if it failed. """
+    output_path = pdf_path.with_suffix(".md")
+    if output_path.exists() and not overwrite:
+        print(f"Summary already exists, skipping (use --overwrite to redo): {output_path}")
+        return True
+
+    try:
+        paper_text = extract_academic_text(load_pdf(pdf_path))
+        print(f"Extracted roughly {len(paper_text.split())} words.")
+        save_markdown_file(summarize_academic_paper(paper_text, model_name), output_path)
+        return True
+    except Exception as e:
+        print(f"Error processing {pdf_path.name}: {e}")
+        return False
+
