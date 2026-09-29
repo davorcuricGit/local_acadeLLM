@@ -1,25 +1,44 @@
+---
+title: 'The Capital Asset Pricing Model: Theory and Evidence'
+authors:
+- Eugene F. Fama
+- Kenneth R. French
+tags:
+- asset-pricing
+- capital-asset-pricing-model-capm
+- empirical-tests
+source: '[[AFA611-S6B-FamaFrench-CAPM-JEP04.pdf]]'
+model: qwen3.5:9b
+created: 2026-09-29
+---
+
+# The Capital Asset Pricing Model: Theory and Evidence
+
+## Authors
+Eugene F. Fama, Kenneth R. French
+
 # The Capital Asset Pricing Model: Theory and Evidence
 
 ## Authors
 Eugene F. Fama, Kenneth R. French
 
 ## Keywords
-Capital Asset Pricing Model, Asset Pricing, Empirical Tests
+Asset Pricing, Capital Asset Pricing Model (CAPM), Empirical Tests
 
 ## 1. Core Contribution & Objective
-Critically evaluates the empirical validity of the Capital Asset Pricing Model (CAPM), arguing that its theoretical assumptions and empirical tests are flawed, particularly regarding market efficiency and risk measurement. It synthesizes evidence showing that variables like firm size and book-to-market equity significantly predict returns beyond beta, leading to the proposal of a three-factor model.
+The paper critically evaluates the empirical validity of the Capital Asset Pricing Model (CAPM), arguing that its theoretical assumptions and reliance on market proxies lead to invalid applications. It synthesizes evidence demonstrating that market beta alone fails to explain expected returns, specifically highlighting size and value effects, and proposes a three-factor model as a more accurate alternative for estimating risk premiums.
 
 ## 2. Methodology & Framework
-Literature review and analysis of historical stock data from the Center for Research in Security Prices (CRSP) database covering NYSE, AMEX, and NASDAQ stocks from 1928 to 2003. Utilizes cross-section and time-series regression analyses to test the relationship between expected returns and market betas.
+Review of historical empirical literature; analysis of cross-section and time-series regression tests (Fama-MacBeth, Gibbons-Ross-Shanken); construction of portfolios sorted by beta, size, and book-to-market ratios using CRSP and Compustat data.
 
 ## 3. Key Findings & Data Insights
-Early tests reject the Sharpe-Lintner CAPM, showing a 'flat' relation between beta and average return (Figure 2). Portfolios sorted by book-to-market ratio show high returns for value stocks that are not explained by beta (Figure 3). The three-factor model (Market, SMB, HML) captures these anomalies better than the CAPM. Market proxies fail to explain global or specific portfolio returns adequately.
+1. Early cross-section regressions reject the Sharpe-Lintner CAPM, showing a 'flat' relation between beta and return (intercept > risk-free rate). 2. Size effect: Small stocks yield higher returns than predicted. 3. Value effect: High book-to-market stocks yield higher returns than predicted. 4. The three-factor model (Market, SMB, HML) captures these anomalies better than CAPM. 5. Market proxy problem: Standard proxies (US common stocks) fail to explain global anomalies; true market portfolio is elusive.
 
 ## 4. Limitations & Future Work
-The true market portfolio is empirically elusive (Roll, 1977), making tests dependent on proxies. Standard errors on premium estimates are large, rendering cost of equity estimates unreliable. A theoretical impasse exists between behavioral and rational risk explanations for pricing anomalies.
+Reliance on market proxies rather than the true market portfolio (Roll's critique); large standard errors on beta and market premium estimates make cost of equity estimates unreliable; momentum effect remains unexplained by the three-factor model.
 
 ## 5. Terms
-- **CAPM**: Capital Asset Pricing Model, a model that describes the relationship between systematic risk and expected return for assets.
-- **Beta**: A measure of an asset's sensitivity to movements in the overall market return.
-- **Three-Factor Model**: An asset pricing model that extends CAPM by adding size (SMB) and value (HML) factors to explain expected returns.
+- **CAPM**: Capital Asset Pricing Model, a model relating expected asset returns to their market betas.
+- **Beta**: A measure of an asset's sensitivity to market movements (covariance with market return divided by market variance).
+- **Market Portfolio**: The theoretical portfolio containing all risky assets weighted by their market value.
 

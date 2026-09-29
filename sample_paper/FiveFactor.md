@@ -1,25 +1,44 @@
+---
+title: A five-factor asset pricing model
+authors:
+- Eugene F. Fama
+- Kenneth R. French
+tags:
+- asset-pricing-model
+- factor-model
+- profitability
+source: '[[FiveFactor.pdf]]'
+model: qwen3.5:9b
+created: 2026-09-29
+---
+
+# A five-factor asset pricing model
+
+## Authors
+Eugene F. Fama, Kenneth R. French
+
 # A five-factor asset pricing model
 
 ## Authors
 Eugene F. Fama, Kenneth R. French
 
 ## Keywords
-Asset pricing model, Factor model, Dividend discount model
+Asset pricing model, Factor model, Profitability
 
 ## 1. Core Contribution & Objective
-Extends the Fama-French three-factor model by adding profitability (RMW) and investment (CMA) factors to better explain average stock returns across size, value, profitability, and investment dimensions. The core hypothesis is that these additional factors capture significant variation in expected returns, potentially rendering the traditional value factor (HML) redundant.
+Extends the Fama-French three-factor model by adding profitability and investment factors to explain average stock returns, specifically addressing anomalies in small stocks that invest heavily despite low profitability. The core hypothesis is that these new factors capture unexplained return variation, potentially rendering the value factor (HML) redundant.
 
 ## 2. Methodology & Framework
-Uses US stock data from CRSP and Compustat covering July 1963 to December 2013 (606 months). Constructs portfolios based on independent sorts of Size, Book-to-Market (B/M), Operating Profitability (OP), and Investment (Inv). Employs time-series regressions of excess returns against market, size, value, profitability, and investment factors. Compares model performance using GRS statistics, intercepts, and variance ratios across three sets of factor definitions (2 & 3 sorts, 2 & 2 sorts, and 2 & 2 & 2 & 2 sorts).
+Uses monthly excess return data from CRSP and Compustat for NYSE, AMEX, and NASDAQ stocks (share codes 10 or 11) from July 1963 to December 2013. Constructs portfolios sorted by Size, Book-to-Market (B/M), Operating Profitability (OP), and Investment (Inv). Performs time-series regressions of portfolio excess returns on factor returns (Market, SMB, HML, RMW, CMA) and tests model performance using GRS statistics and intercept analysis.
 
 ## 3. Key Findings & Data Insights
-1. The five-factor model significantly outperforms the three-factor model in explaining average returns on portfolios formed on profitability and investment (Table 5), reducing unexplained variance to 42-54% compared to 54-68% for the three-factor model. 2. HML becomes redundant; its high average return is absorbed by exposures to RMW and CMA, particularly in the five-factor model (Section 7, Table 6). 3. A persistent anomaly exists: small stocks with low profitability and high investment (negative RMW/CMA slopes) exhibit low average returns that the model fails to fully capture (Abstract, Section 8, Tables 7 & 10). 4. Factor definition sensitivity is low; results are robust across different factor construction methods.
+1. The five-factor model reduces unexplained return variance compared to the three-factor model (Table 5). 2. The value factor (HML) is redundant for describing average returns when profitability and investment factors are included, as its high average return is captured by exposures to RMW and CMA (Section 7). 3. Small stocks with low profitability and high investment remain a major problem, showing negative intercepts not fully explained by the five-factor model (Tables 7, 10, 11). 4. Big stocks with similar characteristics show positive unexplained returns, challenging behavioral explanations focused solely on small stocks.
 
 ## 4. Limitations & Future Work
-The model still leaves a substantial portion of return variance unexplained (approx. 28% for Size-Inv portfolios). Results may be specific to the US sample period (1963-2013) and do not necessarily apply to pre-1963 or international data. Measurement error inflates intercept estimates. The model fails to capture returns of small stocks that invest heavily despite low profitability.
+The model still fails to capture low average returns for specific small stock portfolios (low profitability, high investment). Measurement error inflates intercept estimates. Results may be specific to the 1963–2013 sample period. Future research is suggested for pre-1963 data or international markets.
 
 ## 5. Terms
-- **HML**: High Minus Low: A factor representing the difference between returns on high book-to-market (value) and low book-to-market (growth) portfolios.
-- **RMW**: Robust Minus Weak: A factor capturing the difference in returns between firms with robust operating profitability and those with weak profitability.
-- **CMA**: Conservative Minus Aggressive: A factor representing the difference in returns between firms with conservative investment (low growth in assets) and aggressive investment (high growth in assets).
+- **SMB**: Size factor: Return on a diversified portfolio of small stocks minus the return on a diversified portfolio of big stocks.
+- **HML**: Value factor: Difference between returns on portfolios of high book-to-market (value) stocks and low book-to-market (growth) stocks.
+- **GRS**: Gibbons-Ross-Shanken statistic: A test used to determine if the intercepts in a regression model are jointly distinguishable from zero.
 

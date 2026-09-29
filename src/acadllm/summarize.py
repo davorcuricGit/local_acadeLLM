@@ -1,16 +1,35 @@
 import ollama
 from pydantic import BaseModel, Field
+import re
+from datetime import date
+import yaml
 
 from acadllm.pdf import extract_academic_text, load_pdf
 from acadllm.config import MODEL, PROMPT_TEMPLATE, CONTEXT_WINDOW, TEMPERATURE
 
 
+def to_tag(keyword):
+    """ Converts a keyword into a valid Obsidian tag: lowercase, hyphens instead of spaces, no punctuation. """
+    tag = re.sub(r"[^\w\s-]", "", keyword.lower())
+    return re.sub(r"[\s_]+", "-", tag).strip("-")
 
-def summary_to_markdown(summary):
-    """ Renders a PaperSummary as the Markdown literature review note. """
+
+def summary_to_markdown(summary, source_pdf, model_name):
+    """ Renders a PaperSummary as a Markdown note with YAML frontmatter"""
+    frontmatter = {
+        "title": summary.title,
+        "authors": summary.authors,
+        "tags": [to_tag(k) for k in summary.keywords],
+        "source": f"[[{source_pdf}]]",
+        "model": model_name,
+        "created": date.today(),
+    }
     terms = "\n".join(f"- **{t.term}**: {t.definition}" for t in summary.terms)
 
     return (
+        f"---\n{yaml.safe_dump(frontmatter, sort_keys=False, allow_unicode=True)}---\n\n"
+        f"# {summary.title}\n\n"
+        f"## Authors\n{', '.join(summary.authors)}\n\n"
         f"# {summary.title}\n\n"
         f"## Authors\n{', '.join(summary.authors)}\n\n"
         f"## Keywords\n{', '.join(summary.keywords)}\n\n"
@@ -115,7 +134,8 @@ def summarize_pdf(pdf_path, overwrite=False, model_name=MODEL):
     try:
         paper_text = extract_academic_text(load_pdf(pdf_path))
         print(f"Extracted roughly {len(paper_text.split())} words.")
-        save_markdown_file(summary_to_markdown(summarize_academic_paper(paper_text, model_name)), output_path)
+        summary = summarize_academic_paper(paper_text, model_name)
+        save_markdown_file(summary_to_markdown(summary, pdf_path.name,      model_name), output_path)
         return True
     except Exception as e:
         print(f"Error processing {pdf_path.name}: {type(e).__name__}: {e}")
