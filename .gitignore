@@ -9,3 +9,5 @@ todo.md
 
 #
 *.egg-info/
+
+/scratch/

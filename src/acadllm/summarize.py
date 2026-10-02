@@ -30,8 +30,6 @@ def summary_to_markdown(summary, source_pdf, model_name):
         f"---\n{yaml.safe_dump(frontmatter, sort_keys=False, allow_unicode=True)}---\n\n"
         f"# {summary.title}\n\n"
         f"## Authors\n{', '.join(summary.authors)}\n\n"
-        f"# {summary.title}\n\n"
-        f"## Authors\n{', '.join(summary.authors)}\n\n"
         f"## Keywords\n{', '.join(summary.keywords)}\n\n"
         f"## 1. Core Contribution & Objective\n{summary.core_contribution}\n\n"
         f"## 2. Methodology & Framework\n{summary.methodology}\n\n"
@@ -46,6 +44,11 @@ def save_markdown_file(markdown_content, output_path):
         f.write(markdown_content)
     print(f"\nAcademic summary successfully saved to: {output_path}")
 
+def create_markdown_directory(path):
+    """ Creates a directory for Markdown summaries if it doesn't exist. """
+    md_dir = path / "summaries"
+    md_dir.mkdir(exist_ok=True)
+    return md_dir
 
 # Schema passed to Ollama as `format=`
 # constrains the model to output JSON with exactly these fields. 
@@ -126,7 +129,13 @@ def summarize_path(path, overwrite=False, model_name=MODEL):
 
 def summarize_pdf(pdf_path, overwrite=False, model_name=MODEL):
     """ Summarizes one PDF into a .md file next to it. Returns False if it failed. """
-    output_path = pdf_path.with_suffix(".md")
+    
+    create_markdown_directory(pdf_path.parent)
+
+    #save to the 'summaries' subdirectory
+    output_path = pdf_path.parent / "summaries" / pdf_path.with_suffix(".md").name
+    
+
     if output_path.exists() and not overwrite:
         print(f"Summary already exists, skipping (use --overwrite to redo): {output_path}")
         return True
