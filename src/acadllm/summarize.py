@@ -4,7 +4,7 @@ import re
 from datetime import date
 import yaml
 
-from acadllm.pdf import extract_academic_text, load_pdf
+from acadllm.docs import extract_academic_text, load_pdf
 from acadllm.config import MODEL, PROMPT_TEMPLATE, CONTEXT_WINDOW, TEMPERATURE
 
 
@@ -31,6 +31,8 @@ def summary_to_markdown(summary, source_pdf, model_name):
         f"# {summary.title}\n\n"
         f"## Authors\n{', '.join(summary.authors)}\n\n"
         f"## Keywords\n{', '.join(summary.keywords)}\n\n"
+        f"## Short Title\n{summary.short_title}\n\n"
+        f"## Abstract\n{summary.abstract}\n\n"
         f"## 1. Core Contribution & Objective\n{summary.core_contribution}\n\n"
         f"## 2. Methodology & Framework\n{summary.methodology}\n\n"
         f"## 3. Key Findings & Data Insights\n{summary.key_findings}\n\n"
@@ -60,6 +62,8 @@ class PaperSummary(BaseModel):
     title: str
     authors: list[str]
     keywords: list[str] = Field(max_length=3)
+    short_title: str
+    abstract: str
     core_contribution: str
     methodology: str
     key_findings: str

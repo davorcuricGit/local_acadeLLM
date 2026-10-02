@@ -1,6 +1,6 @@
 import pytest
 
-import acadllm.pdf as pdf
+import acadllm.docs as docs
 from acadllm.summarize import to_tag
 
 SAMPLE_PATH = './sample_paper/AFA611-S6B-FamaFrench-CAPM-JEP04.pdf'
@@ -22,11 +22,11 @@ def test_to_tag(string, expected):
     ('see References below', ['pre', 'see References below', 'post']),
 ])
 def test_remove_references(text_block, expected):
-    result = pdf.remove_references(['pre', text_block, 'post'])
+    result = docs.remove_references(['pre', text_block, 'post'])
     assert result == expected
 
 def test_load_pdf():
-    result = pdf.load_pdf(SAMPLE_PATH)
+    result = docs.load_pdf(SAMPLE_PATH)
     num_pages = len(result)
     assert result is not None
     assert num_pages == 22

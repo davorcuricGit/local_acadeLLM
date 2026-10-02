@@ -5,6 +5,7 @@ from pathlib import Path
 from acadllm.config import MODEL, EMBEDDING_MODEL
 from acadllm.summarize import summarize_path
 from acadllm.llm import ensure_model_available
+from acadllm.embed import embed_path
 
 
 def existing_path(value):
@@ -27,8 +28,19 @@ def run_summarize(args):
     else:
         print("\nAll PDFs summarized successfully.")
 
-def run_embedd(args):
+def run_embed(args):
     print('in progress')
+
+    # Checked once up front, so a batch run doesn't ask per paper
+    if not ensure_model_available(args.model):
+        sys.exit(1)
+
+    failed = embed_path(args.path, args.model, args.visualize)
+    if failed:
+        print(f"\n{len(failed)} failed: {', '.join(failed)}")
+        sys.exit(1)
+    else:
+        print("\nAll PDFs summarized successfully.")
     pass
 
 def main():
@@ -46,10 +58,11 @@ def main():
     summarize.add_argument("--model", default=MODEL, help=f"Ollama model to use, (default: {MODEL})")
     summarize.set_defaults(func=run_summarize)
 
-    embedd = subcommands.add_parser("embedd", help="produce embeddings for each Markdown summary")
+    embedd = subcommands.add_parser("embed", help="produce embeddings for each Markdown summary")
     embedd.add_argument("path", type=existing_path, help="a Markdown file, or a directory of Markdown files")
     embedd.add_argument("--model", default=EMBEDDING_MODEL, help=f"Ollama model to use, (default: {EMBEDDING_MODEL})")
-    embedd.set_defaults(func=run_embedd)
+    embedd.add_argument("--visualize", action="store_true", help="visualize the similarity matrix of resulting embeddings")
+    embedd.set_defaults(func=run_embed)
 
     args = parser.parse_args()
     args.func(args)

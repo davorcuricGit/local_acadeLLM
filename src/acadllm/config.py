@@ -15,6 +15,8 @@ PROMPT_TEMPLATE = (
 "- title: the name of the paper\n"
 "- authors: list of author names\n"
 "- keywords: up to three keywords\n"
+"- short title: a concise, 3-5 word title for the paper\n"
+"- abstract: a brief overview of the paper's content\n"
 "- core_contribution: What problem does this paper solve? What is the core hypothesis?\n"
 "- methodology: experiment design, dataset, or architectural setup\n"
 "- key_findings: synthesize the main results, specifically highlighting any data, figures, or tables mentioned\n"
