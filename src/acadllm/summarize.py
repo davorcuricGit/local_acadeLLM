@@ -135,11 +135,9 @@ def summarize_pdf(pdf_path, overwrite=False, model_name=MODEL):
     #save to the 'summaries' subdirectory
     output_path = pdf_path.parent / "summaries" / pdf_path.with_suffix(".md").name
     
-
     if output_path.exists() and not overwrite:
         print(f"Summary already exists, skipping (use --overwrite to redo): {output_path}")
         return True
-
     try:
         paper_text = extract_academic_text(load_pdf(pdf_path))
         print(f"Extracted roughly {len(paper_text.split())} words.")

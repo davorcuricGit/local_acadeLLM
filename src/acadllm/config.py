@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 MODEL = os.environ.get("ACADLLM_MODEL", "qwen3.5:9b")  # Default to qwen3.5:9b if not set
+EMBEDDING_MODEL = os.environ.get("ACADLLM_EMBEDDING_MODEL", "nomic-embed-text")  # Default to nomic-embed-text if not set
 CONTEXT_WINDOW = int(os.environ.get("ACADLLM_CONTEXT_WINDOW", 32768))  # Default
 TEMPERATURE = float(os.environ.get("ACADLLM_TEMPERATURE", 0.2))  # Default to 0.2 if not set
 
