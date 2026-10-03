@@ -25,7 +25,9 @@ def cache_embeddings(embeddings, paper_dict, path, model = EMBEDDING_MODEL):
     data["entries"] = dict()
     
     for i, (md_name, value) in enumerate(paper_dict.items()):
-        data["entries"][md_name] = {"hash": value["hash"], "embedding": embeddings[i].tolist()}
+        data["entries"][md_name] = {"title": value["title"],
+                                     "hash": value["hash"], 
+                                     "embedding": embeddings[i].tolist()}
 
     # Save the dictionary to a file
     with open(cache_path, "w") as f:

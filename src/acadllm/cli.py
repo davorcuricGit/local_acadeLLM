@@ -43,6 +43,36 @@ def run_embed(args):
         print("\nAll PDFs summarized successfully.")
     pass
 
+
+def run_visualize(args):
+    import json
+    import numpy as np
+    from acadllm.plotting import plot_similarity_matrix
+
+    #load cached embeddings and visualize the similarity matrix
+    cache_path = args.path / "summaries" / ".acadllm" / "embeddings.json"
+    if not cache_path.exists():
+        print(f"Cached embeddings not found at {cache_path}. Please run 'embed' first.")
+        sys.exit(1)
+
+
+    # Open the file and load it as a dictionary
+    with open(cache_path, 'r') as file:
+        dict = json.load(file)
+
+    #get titles from dictionary
+    titles = [value["title"] for value in dict["entries"].values()]
+
+    #get embeddings from dictionary
+    embeddings = [value["embedding"] for value in dict["entries"].values()]
+
+
+    #print((embeddings))
+
+    plot_similarity_matrix(np.array(embeddings), titles)
+
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="acadllm",
@@ -58,14 +88,23 @@ def main():
     summarize.add_argument("--model", default=MODEL, help=f"Ollama model to use, (default: {MODEL})")
     summarize.set_defaults(func=run_summarize)
 
+
+
     embedd = subcommands.add_parser("embed", help="produce embeddings for each Markdown summary")
-    embedd.add_argument("path", type=existing_path, help="a Markdown file, or a directory of Markdown files")
+    embedd.add_argument("path", type=existing_path, help="directory of PDFs (the summaries must already exist)")
     embedd.add_argument("--model", default=EMBEDDING_MODEL, help=f"Ollama model to use, (default: {EMBEDDING_MODEL})")
     embedd.add_argument("--visualize", action="store_true", help="visualize the similarity matrix of resulting embeddings")
     embedd.set_defaults(func=run_embed)
 
+
+    visualize = subcommands.add_parser("visualize", help="visualize the similarity matrix of embeddings")
+    visualize.add_argument("path", type=existing_path, help="directory of PDFs (the summaries must already exist)")
+    visualize.set_defaults(func=run_visualize)
+
     args = parser.parse_args()
     args.func(args)
+
+    
 
     
 
