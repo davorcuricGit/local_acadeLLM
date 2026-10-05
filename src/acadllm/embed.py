@@ -15,23 +15,35 @@ def normalize_embeddings(embeddings):
     return embeddings / norms
 
 
-def cache_embeddings(embeddings, paper_dict, path, model = EMBEDDING_MODEL):
-    cache_path = path / "summaries" / ".acadllm" / "embeddings.json"
+def get_cache_path(path):
+    """ Location of the embedding cache for a directory of PDFs (or a single PDF's directory). """
+    directory = path if path.is_dir() else path.parent
+    return directory / "summaries" / ".acadllm" / "embeddings.json"
 
+
+def save_cache(entries, cache_path, model_name):
+    """ Writes to a temporary file first, so an interrupted write can't corrupt the cache. """
     cache_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    data = dict()
-    data["model"] = model
-    data["entries"] = dict()
-    
-    for i, (md_name, value) in enumerate(paper_dict.items()):
-        data["entries"][md_name] = {"title": value["title"],
-                                     "hash": value["hash"], 
-                                     "embedding": embeddings[i].tolist()}
+    tmp_path = cache_path.with_suffix(".tmp")
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        json.dump({"model": model_name, "entries": entries}, f)
 
-    # Save the dictionary to a file
-    with open(cache_path, "w") as f:
-        json.dump(data, f)
+    #now overwrite the tmp file    
+    tmp_path.replace(cache_path)
+
+def load_cache(cache_path, model_name):
+    """ Returns cached entries keyed by summary file name, or {} if there is no usable cache. """
+    try:
+        with open(cache_path, encoding="utf-8") as f:
+            data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+    # Vectors from a different embedding model can't be compared with new ones
+    if data.get("model") != model_name:
+        return {}
+    return data.get("entries", {})
+
 
 
 
@@ -46,9 +58,13 @@ def embed_path(path, model_name = EMBEDDING_MODEL, visualize = False):
     else:
         pdfs = [path]
 
-    prompt_list = []
-    paper_titles = []
-    paper_dict = dict()
+    cache_path = get_cache_path(path)
+    cached = load_cache(cache_path, model_name)
+
+    entries = {}
+    to_embed = []
+
+
     failed = []
     for i, pdf_path in enumerate(pdfs, start=1):
         print(f"\n[{i}/{len(pdfs)}] {pdf_path.name}")
@@ -61,16 +77,22 @@ def embed_path(path, model_name = EMBEDDING_MODEL, visualize = False):
             continue
 
         prompt, title = get_prompt_from_md(md_path)
-        prompt_list.append(prompt)  
-        paper_titles.append(title)
 
-        paper_dict[pdf_path.with_suffix(".md").name] = {"title": title, 
-                                                        "prompt": prompt, 
-                                                        "hash": hashlib.sha256(prompt.encode()).hexdigest()}
+        prompt_hash = hashlib.sha256(prompt.encode()).hexdigest()
+        name = md_path.name
 
-    response = ollama.embed(model = model_name, input = prompt_list)  
-    embeddings = np.vstack(normalize_embeddings(response.embeddings))
+        #check if prompt already cached
+        if name in cached and cached[name]["hash"] == prompt_hash:
+            entries[name] = {**cached[name], "title":title}
+        else:
+            entries[name] = {"title": title, "hash": prompt_hast}
+            to_embed.append((name, prompt))
 
-    cache_embeddings(embeddings, paper_dict, path)
-      
-    return failed
+    print(f"{len(entries) - len(to_embed)} cached, {len(to_embed)} to embed.")
+
+    if to_embed:
+        response = ollama.embed(model=model_name, input=[prompt for _, prompt in to_embed])
+        for (name, _), vector in zip(to_embed, normalize_embeddings(np.array(response.embeddings))):
+            entries[name]["embedding"] = vector.tolist()
+
+    save_cache(entries, cache_path, model_name)
