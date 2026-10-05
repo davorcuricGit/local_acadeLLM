@@ -24,8 +24,7 @@ def get_prompt_from_md(md_path):
     title = "\n".join(title)
 
     # concatenate text into single prompt
-    prompt = ""
-    [prompt := prompt + text['Paragraph'][i] + "\n" for i in range(len(text['Paragraph']))]
+    prompt = "\n".join(text['Paragraph'])
     
     return "clustering:" + prompt, title  # nomic-embed-text benefits from having prefixes for embedding use
 

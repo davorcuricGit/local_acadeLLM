@@ -4,8 +4,8 @@ import hashlib
 import json
 
 from acadllm.config import EMBEDDING_MODEL
-from acadllm.docs import load_md, get_prompt_from_md
-from acadllm.plotting import plot_similarity_matrix
+from acadllm.docs import get_prompt_from_md
+
 
 def normalize_embeddings(embeddings):
     """Normalize embeddings to unit length (L2 norm)."""
@@ -46,9 +46,7 @@ def load_cache(cache_path, model_name):
 
 
 
-
-
-def embed_path(path, model_name = EMBEDDING_MODEL, visualize = False):
+def embed_path(path, model_name = EMBEDDING_MODEL):
     """ Summarizes a Markdown file, or every Markdown file in a directory. Returns the names of files that failed. Called by cli.py"""
 
     # get all pdf files so that we can get the title of the paper from the pdf file
@@ -85,7 +83,7 @@ def embed_path(path, model_name = EMBEDDING_MODEL, visualize = False):
         if name in cached and cached[name]["hash"] == prompt_hash:
             entries[name] = {**cached[name], "title":title}
         else:
-            entries[name] = {"title": title, "hash": prompt_hast}
+            entries[name] = {"title": title, "hash": prompt_hash}
             to_embed.append((name, prompt))
 
     print(f"{len(entries) - len(to_embed)} cached, {len(to_embed)} to embed.")

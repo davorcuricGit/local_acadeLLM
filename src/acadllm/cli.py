@@ -5,7 +5,7 @@ from pathlib import Path
 from acadllm.config import MODEL, EMBEDDING_MODEL
 from acadllm.summarize import summarize_path
 from acadllm.llm import ensure_model_available
-from acadllm.embed import embed_path
+from acadllm.embed import embed_path, load_cache
 
 
 def existing_path(value):
@@ -50,11 +50,10 @@ def run_visualize(args):
     from acadllm.plotting import plot_similarity_matrix
 
     #load cached embeddings and visualize the similarity matrix
-    cache_path = args.path / "summaries" / ".acadllm" / "embeddings.json"
+    cache_path = load_cache(args.path, args.model)
     if not cache_path.exists():
         print(f"Cached embeddings not found at {cache_path}. Please run 'embed' first.")
         sys.exit(1)
-
 
     # Open the file and load it as a dictionary
     with open(cache_path, 'r') as file:
