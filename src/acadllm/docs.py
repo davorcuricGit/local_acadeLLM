@@ -1,16 +1,19 @@
 import re
 import os
 import pymupdf
+from pathlib import Path
 from mrkdwn_analysis import MarkdownAnalyzer
 
 
+def ensure_path_exists(path):
+     if not os.path.exists(path):
+                 raise FileNotFoundError(f"The file {path} does not exist.")
+     return Path(path)
 
 ## MD summary extraction and cleaning utilities
 def load_md(path):
     """ Loads a Markdown file and returns a MarkdownAnalyzer object. Future versions will remove MARKdownAnalyzer dependency"""
-    if not os.path.exists(path):
-            raise FileNotFoundError(f"The file {path} does not exist.")
-
+    path = ensure_path_exists(path)
     return MarkdownAnalyzer(path)
 
 
@@ -32,9 +35,7 @@ def get_prompt_from_md(md_path):
 
 ## PDF text extraction and cleaning utilities
 def load_pdf(pdf_path):
-    if not os.path.exists(pdf_path):
-            raise FileNotFoundError(f"The file {pdf_path} does not exist.")
-            
+    pdf_path = ensure_path_exists(pdf_path)
     return pymupdf.open(pdf_path)
 
 def extract_academic_text(doc):

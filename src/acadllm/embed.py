@@ -4,7 +4,8 @@ import hashlib
 import json
 
 from acadllm.config import EMBEDDING_MODEL
-from acadllm.docs import get_prompt_from_md
+from acadllm.docs import get_prompt_from_md, ensure_path_exists
+
 
 
 def normalize_embeddings(embeddings):
@@ -17,6 +18,7 @@ def normalize_embeddings(embeddings):
 
 def get_cache_path(path):
     """ Location of the embedding cache for a directory of PDFs (or a single PDF's directory). """
+    path = ensure_path_exists(path)
     directory = path if path.is_dir() else path.parent
     return directory / "summaries" / ".acadllm" / "embeddings.json"
 
